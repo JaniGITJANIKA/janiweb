@@ -1,0 +1,47 @@
+body  {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+
+
+header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 0 0 0;
+    padding: 5px 3px 5px 3px;
+    border-bottom: solid navy 3px;
+    background-color: white;
+}
+header img {
+    height: 50px;
+}
+header p {
+    font-size: xxx-large;
+    margin: 0;
+    font-weight: 600;
+    background: linear-gradient(45deg,lightgreen 40%,blue);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+#menuimg {
+    border-radius: 100%;
+    margin: 3px 3px;
+}
+#menubutton {
+    margin: 3px 3px;
+}
+#menuimg:hover{
+    border: solid rgb(120, 120, 255) 3px;
+    margin: 0;
+}
+.h1img {
+    display: block;
+    width: 80%;
+    max-width: 400px;
+    margin: 20px auto;
+}
