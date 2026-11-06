@@ -3,18 +3,458 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Janiweb</title>
-    <link rel="stylesheet" href="style.css">
+    <title>C4 Időzített Bomba Szimulátor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0b0d;
+            color: #e0e0e0;
+            touch-action: manipulation;
+        }
+
+        .digital-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* Glitch and Pulsing Effects */
+        .glow-red {
+            text-shadow: 0 0 12px rgba(255, 30, 30, 0.8), 0 0 25px rgba(255, 0, 0, 0.5);
+        }
+
+        .glow-green {
+            text-shadow: 0 0 12px rgba(0, 255, 100, 0.8), 0 0 25px rgba(0, 255, 100, 0.5);
+        }
+
+        .c4-body {
+            background: linear-gradient(145deg, #2b261f 0%, #1c1813 100%);
+            border: 2px solid #4a3e31;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.1);
+        }
+
+        .led-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #330000;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+            transition: background-color 0.05s ease, box-shadow 0.05s ease;
+        }
+
+        .led-dot.active {
+            background-color: #ff0000;
+            box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+        }
+
+        /* Flash Screen Animation */
+        @keyframes flash-screen {
+            0% { opacity: 1; background-color: #ffffff; }
+            15% { opacity: 1; background-color: #ff3300; }
+            100% { opacity: 0; background-color: #000000; }
+        }
+
+        .flash-active {
+            display: flex !important;
+            animation: flash-screen 3.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <a href="#top"><img id="top" src="media/ menuimg.png" alt="" id="menuimg"></a>
-        <p>Janiweb.eu</p>
-        <img id="menubutton" src="media/menu.svg" alt="">
-    </header>
-    <nav></nav>
-    <img style="border-radius: 100%;" class="h1img" src="media/janiweb.png" alt="">
-    <h1>Üdvözölek a teljesen új megújult Janiweben!</h1>
-    <a href=" bombagame.html">Bombagame</a>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 select-none">
+
+    <!-- C4 Main Container -->
+    <div class="w-full max-w-md rounded-2xl p-5 c4-body relative overflow-hidden border-t-4 border-t-amber-700/40">
+        
+        <!-- Decorative Straps / Wires styling -->
+        <div class="absolute -top-10 left-8 w-6 h-24 bg-neutral-800 border-x border-neutral-600 transform -rotate-12 opacity-40"></div>
+        <div class="absolute -top-10 right-8 w-6 h-24 bg-neutral-800 border-x border-neutral-600 transform rotate-12 opacity-40"></div>
+        
+        <!-- Header / Status -->
+        <div class="flex items-center justify-between mb-4 px-2">
+            <div class="flex items-center space-x-2">
+                <div id="statusLed" class="led-dot"></div>
+                <span id="statusText" class="text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase">ARMED / READY</span>
+            </div>
+            <span class="text-[10px] font-mono text-amber-600/70 tracking-widest">C4-EXPLOSIVE SYSTEM</span>
+        </div>
+
+        <!-- Digital Timer Display Box -->
+        <div class="bg-black border-4 border-neutral-800 rounded-xl p-4 mb-6 relative shadow-inner flex flex-col items-center justify-center min-h-[120px]">
+            <div class="absolute top-2 left-3 text-[10px] font-mono text-neutral-600">COUNTDOWN TIMER</div>
+            <div id="timerDisplay" class="digital-font text-6xl sm:text-7xl font-extrabold text-red-600 tracking-wider glow-red my-1">
+                00:45
+            </div>
+            <div id="subStatus" class="text-xs font-mono text-red-900/80 uppercase tracking-widest">SYSTEM READY</div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="space-y-4 bg-neutral-900/80 p-4 rounded-xl border border-neutral-800/80 backdrop-blur-sm">
+            
+            <!-- Time Inputs (Grid) -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">PERC</label>
+                    <input type="number" id="minutes" min="0" max="99" value="0" 
+                        class="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-center text-xl font-bold text-amber-500 focus:outline-none focus:border-amber-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-neutral-400 mb-1">MÁSODPERC</label>
+                    <input type="number" id="seconds" min="0" max="59" value="45" 
+                        class="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-center text-xl font-bold text-amber-500 focus:outline-none focus:border-amber-500 transition">
+                </div>
+            </div>
+
+            <!-- Acceleration Threshold -->
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-semibold text-neutral-400">GYORSULÁS KEZDETE</label>
+                    <span id="accelLabel" class="text-xs font-mono text-amber-500">Az elejétől</span>
+                </div>
+                <input type="number" id="accelMinute" min="0" max="99" value="0" placeholder="0 = azonnal"
+                    class="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-sm text-neutral-200 focus:outline-none focus:border-amber-500 transition">
+                <p class="text-[11px] text-neutral-500 mt-1">Hányadik perctől gyorsuljon fel a C4 csipogás.</p>
+            </div>
+
+            <!-- Accordion for Audio Settings -->
+            <details class="group bg-neutral-950/60 rounded-lg border border-neutral-800/60">
+                <summary class="flex justify-between items-center p-3 text-xs font-semibold text-neutral-400 cursor-pointer list-none">
+                    <span>🎵 EGYÉBI HANGOK (OPCIONÁLIS)</span>
+                    <span class="transition group-open:rotate-180">▼</span>
+                </summary>
+                <div class="p-3 pt-0 space-y-3 border-t border-neutral-800/40 mt-1">
+                    <div>
+                        <label class="block text-[11px] text-neutral-400 mb-1">Háttérzene (MP3/WAV)</label>
+                        <input type="file" id="bgMusicFile" accept="audio/*"
+                            class="w-full text-xs text-neutral-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-neutral-800 file:text-amber-500 hover:file:bg-neutral-700">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-neutral-400 mb-1">Saját Robbanás Hang</label>
+                        <input type="file" id="explosionFile" accept="audio/*"
+                            class="w-full text-xs text-neutral-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-neutral-800 file:text-amber-500 hover:file:bg-neutral-700">
+                    </div>
+                </div>
+            </details>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button id="startBtn" onclick="armBomb()" 
+                    class="w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-gradient-to-r from-red-600 to-red-800 text-white shadow-lg shadow-red-900/40 hover:from-red-500 hover:to-red-700 active:scale-95 transition flex items-center justify-center space-x-2">
+                    <span>💣 ÉLESÍTÉS</span>
+                </button>
+                <button id="defuseBtn" onclick="defuseBomb()" disabled
+                    class="w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-md active:scale-95 transition flex items-center justify-center space-x-2">
+                    <span>✂️ HATÁSTALANÍTÁS</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="mt-4 text-center">
+            <p class="text-[10px] text-neutral-500 font-mono">AUTHENTIC CS C4 AUDIO SYNTHESIZER</p>
+        </div>
+    </div>
+
+    <!-- Full Screen Explosion Flash Overlay -->
+    <div id="explosionOverlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center pointer-events-none">
+        <h1 class="text-6xl sm:text-8xl font-black text-black tracking-widest drop-shadow-[0_5px_5px_rgba(255,255,255,0.8)]">
+            BOOM!
+        </h1>
+        <p class="text-xl sm:text-2xl font-bold text-black font-mono mt-2">BOMBA FELROBBANT</p>
+    </div>
+
+    <script>
+        // State variables
+        let timerInterval = null;
+        let beepTimeout = null;
+        let totalSeconds = 0;
+        let remainingSeconds = 0;
+        let accelSecondsHatar = 0;
+        let isArmed = false;
+
+        // Audio Context (Web Audio API)
+        let audioCtx = null;
+
+        // Custom loaded audio elements
+        let bgMusicAudio = new Audio();
+        bgMusicAudio.loop = true;
+
+        let customExplosionAudio = new Audio();
+
+        // Audio Input Event Listeners
+        document.getElementById('bgMusicFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                bgMusicAudio.src = URL.createObjectURL(file);
+            }
+        });
+
+        document.getElementById('explosionFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                customExplosionAudio.src = URL.createObjectURL(file);
+            }
+        });
+
+        // Initialize Audio Context on user interaction
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        /**
+         * Synthesizes the iconic Counter-Strike C4 Beep Sound
+         * High pitch (2600Hz), sharp attack, exponential fast decay.
+         */
+        function playC4Beep(pitchMultiplier = 1.0) {
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            // C4 iconic high frequency beep (~2600 Hz base)
+            const baseFreq = 2600 * pitchMultiplier;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+
+            // Fast attack, sharp exponential decay (0.05 seconds total beep duration)
+            gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.055);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.06);
+
+            // LED pulse visual feedback
+            flashLed();
+        }
+
+        /**
+         * Synthesizes a massive realistic explosion sound using noise and sub-bass oscillators
+         */
+        function playSynthesizedExplosion() {
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            // 1. White Noise Buffer for Blast Impact
+            const bufferSize = audioCtx.sampleRate * 2.5; // 2.5 seconds
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            const noiseSource = audioCtx.createBufferSource();
+            noiseSource.buffer = buffer;
+
+            // Lowpass Filter for deep muffled rumble
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1000, now);
+            filter.frequency.exponentialRampToValueAtTime(40, now + 2.0);
+
+            const noiseGain = audioCtx.createGain();
+            noiseGain.gain.setValueAtTime(1.0, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+
+            noiseSource.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+
+            // 2. Sub-Bass Punch Oscillator
+            const subOsc = audioCtx.createOscillator();
+            const subGain = audioCtx.createGain();
+
+            subOsc.type = 'triangle';
+            subOsc.frequency.setValueAtTime(150, now);
+            subOsc.frequency.exponentialRampToValueAtTime(20, now + 1.2);
+
+            subGain.gain.setValueAtTime(0.8, now);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+            subOsc.connect(subGain);
+            subGain.connect(audioCtx.destination);
+
+            // Start Audio
+            noiseSource.start(now);
+            subOsc.start(now);
+            subOsc.stop(now + 1.5);
+            noiseSource.stop(now + 2.5);
+        }
+
+        function flashLed() {
+            const led = document.getElementById('statusLed');
+            led.classList.add('active');
+            setTimeout(() => {
+                led.classList.remove('active');
+            }, 60);
+        }
+
+        function updateDisplay(sec) {
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function armBomb() {
+            initAudio();
+
+            const min = parseInt(document.getElementById('minutes').value) || 0;
+            const sec = parseInt(document.getElementById('seconds').value) || 0;
+            const accelMin = parseInt(document.getElementById('accelMinute').value) || 0;
+
+            totalSeconds = min * 60 + sec;
+            if (totalSeconds <= 0) return;
+
+            // Reset state
+            defuseBomb(false);
+
+            isArmed = true;
+            remainingSeconds = totalSeconds;
+            accelSecondsHatar = accelMin * 60;
+
+            updateDisplay(remainingSeconds);
+
+            // UI Adjustments
+            document.getElementById('statusText').innerText = "ARMED - DETONATION PENDING";
+            document.getElementById('statusText').className = "text-xs font-mono font-bold tracking-widest text-red-500 uppercase";
+            document.getElementById('subStatus').innerText = "DETONATION SEQUENCE ACTIVE";
+            
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = true;
+            startBtn.className = "w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-neutral-800 text-neutral-600 cursor-not-allowed opacity-50";
+
+            const defuseBtn = document.getElementById('defuseBtn');
+            defuseBtn.disabled = false;
+            defuseBtn.className = "w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg shadow-teal-900/40 hover:from-emerald-500 hover:to-teal-600 active:scale-95 transition flex items-center justify-center space-x-2";
+
+            // Start background music if present
+            if (bgMusicAudio.src) {
+                bgMusicAudio.currentTime = 0;
+                bgMusicAudio.play().catch(e => console.log("Zene lejátszási korlát:", e));
+            }
+
+            // Main countdown timer (1s updates)
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                if (remainingSeconds >= 0) {
+                    updateDisplay(remainingSeconds);
+                }
+                if (remainingSeconds <= 0) {
+                    explode();
+                }
+            }, 1000);
+
+            // Beep Scheduling loop
+            scheduleBeep();
+        }
+
+        function scheduleBeep() {
+            if (!isArmed || remainingSeconds <= 0) return;
+
+            const elteltIdo = totalSeconds - remainingSeconds;
+            let delay = 1000; // Base 1s delay
+            let pitchMultiplier = 1.0;
+
+            // Dynamic Acceleration Logic
+            if (elteltIdo >= accelSecondsHatar) {
+                const progressRatio = remainingSeconds / totalSeconds;
+                
+                // Exponential acceleration towards 75ms delay
+                delay = Math.max(75, Math.pow(progressRatio, 1.3) * 1000);
+                
+                // Pitch rises slightly near the end
+                pitchMultiplier = 1.0 + (1.0 - progressRatio) * 0.25;
+            }
+
+            playC4Beep(pitchMultiplier);
+
+            beepTimeout = setTimeout(scheduleBeep, delay);
+        }
+
+        function defuseBomb(playDefuseSound = true) {
+            isArmed = false;
+            clearInterval(timerInterval);
+            clearTimeout(beepTimeout);
+
+            if (bgMusicAudio.src) {
+                bgMusicAudio.pause();
+            }
+
+            // UI Reset
+            document.getElementById('statusText').innerText = "DISARMED / READY";
+            document.getElementById('statusText').className = "text-xs font-mono font-bold tracking-widest text-neutral-400 uppercase";
+            document.getElementById('subStatus').innerText = "SYSTEM READY";
+            
+            const startBtn = document.getElementById('startBtn');
+            startBtn.disabled = false;
+            startBtn.className = "w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-gradient-to-r from-red-600 to-red-800 text-white shadow-lg shadow-red-900/40 hover:from-red-500 hover:to-red-700 active:scale-95 transition flex items-center justify-center space-x-2";
+
+            const defuseBtn = document.getElementById('defuseBtn');
+            defuseBtn.disabled = true;
+            defuseBtn.className = "w-full py-3.5 rounded-xl font-extrabold tracking-wider bg-neutral-800 text-neutral-500 cursor-not-allowed shadow-md transition flex items-center justify-center space-x-2";
+
+            document.getElementById('statusLed').classList.remove('active');
+
+            if (playDefuseSound && audioCtx) {
+                // Short defused sound chime
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        function explode() {
+            defuseBomb(false);
+            
+            // Explosion sound logic
+            if (customExplosionAudio.src) {
+                customExplosionAudio.currentTime = 0;
+                customExplosionAudio.play().catch(() => playSynthesizedExplosion());
+            } else {
+                playSynthesizedExplosion();
+            }
+
+            // Visual explosion flash
+            const overlay = document.getElementById('explosionOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flash-active');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flash-active');
+            }, 3500);
+        }
+    </script>
 </body>
 </html>
